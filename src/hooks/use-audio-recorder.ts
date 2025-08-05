@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { uploadAudioRecording, getAudioRecordings, deleteAudioRecording, getAudioRecordingUrl, type AudioRecordingDB } from '@/lib/supabase/audio-recordings'
-import { useAuth } from '@/hooks/use-auth'
+import { useAuth } from '@/components/providers/supabase-auth-provider'
 
 export interface AudioRecording {
   id: string
@@ -370,21 +370,61 @@ export function useAudioRecorder() {
     }
   }, [capabilities, recordingMode])
 
-  const savePreviewRecording = useCallback(async () => {
-    if (!previewRecording || !user) {
-      console.warn('No preview recording to save or user not authenticated')
+  const savePreviewRecording = useCallback(async (title: string, description: string) => {
+    console.log('savePreviewRecording called', {
+      hasPreviewRecording: !!previewRecording,
+      previewRecordingDetails: previewRecording ? {
+        id: previewRecording.id,
+        name: previewRecording.name,
+        duration: previewRecording.duration,
+        blobSize: previewRecording.blob?.size,
+        blobType: previewRecording.blob?.type
+      } : null,
+      hasUser: !!user,
+      userDetails: user ? {
+        id: user.id,
+        email: user.email
+      } : null,
+      isAuthenticated: !!user
+    })
+
+    if (!previewRecording) {
+      console.error('❌ No preview recording to save', { previewRecording })
+      return
+    }
+
+    if (!user) {
+      console.error('❌ User not authenticated', { user })
       return
     }
 
     try {
       setLoading(true)
-      console.log('Saving preview recording to database...')
+      console.log('✅ Starting to save preview recording to database...', {
+        recordingName: previewRecording.name,
+        userEmail: user.email,
+        recordingMode
+      })
       
+      console.log('📤 Calling uploadAudioRecording with:', {
+        blobSize: previewRecording.blob.size,
+        blobType: previewRecording.blob.type,
+        userEmail: user.email,
+        duration: previewRecording.duration,
+        metadata: {
+          recordingMode,
+          recordingName: previewRecording.name,
+          browserInfo: capabilities?.browserName || 'unknown'
+        }
+      })
+
       const dbRecording = await uploadAudioRecording(
         previewRecording.blob,
         user.email,
         previewRecording.duration,
         previewRecording.blob.type,
+        title,
+        description,
         {
           recordingMode,
           recordingName: previewRecording.name,
@@ -392,6 +432,13 @@ export function useAudioRecorder() {
         }
       )
       
+      console.log('✅ Database recording created successfully:', {
+        id: dbRecording.id,
+        filename: dbRecording.audio_filename,
+        fileLink: dbRecording.complete_file_link,
+        metadata: dbRecording.metadata
+      })
+
       setRecordings(prev => [dbRecording, ...prev])
       setCurrentRecording(dbRecording)
       
@@ -399,9 +446,13 @@ export function useAudioRecorder() {
       URL.revokeObjectURL(previewRecording.url)
       setPreviewRecording(null)
       
-      console.log('Preview recording saved successfully')
+      console.log('🎉 Preview recording saved and UI updated successfully')
     } catch (err) {
-      console.error('Failed to save preview recording:', err)
+      console.error('❌ Failed to save preview recording:', {
+        error: err,
+        errorMessage: err instanceof Error ? err.message : 'Unknown error',
+        errorStack: err instanceof Error ? err.stack : undefined
+      })
       setError(err instanceof Error ? err.message : 'Failed to save recording')
     } finally {
       setLoading(false)

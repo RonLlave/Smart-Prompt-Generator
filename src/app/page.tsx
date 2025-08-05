@@ -1,8 +1,18 @@
-import { auth } from "@/lib/auth"
-import Link from "next/link"
+"use client"
 
-export default async function Home() {
-  const session = await auth()
+import Link from "next/link"
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+
+export default function Home() {
+  const { user, signOut, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+      </main>
+    )
+  }
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-24 bg-gray-900">
@@ -11,9 +21,9 @@ export default async function Home() {
         Visual prompt builder with AI-powered generation
       </p>
       
-      {session?.user ? (
+      {user ? (
         <div className="mt-8 text-center">
-          <p className="mb-4 text-white">Welcome back, {session.user.name || session.user.email}!</p>
+          <p className="mb-4 text-white">Welcome back, {user.user_metadata?.name || user.email}!</p>
           <div className="flex gap-4">
             <Link
               href="/dashboard"
@@ -21,20 +31,12 @@ export default async function Home() {
             >
               Go to Dashboard
             </Link>
-            <form
-              action={async () => {
-                "use server"
-                const { signOut } = await import("@/lib/auth")
-                await signOut()
-              }}
+            <button
+              onClick={signOut}
+              className="inline-flex items-center justify-center rounded-md bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground shadow hover:bg-secondary/90"
             >
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center rounded-md bg-secondary px-6 py-2 text-sm font-semibold text-secondary-foreground shadow hover:bg-secondary/90"
-              >
-                Sign Out
-              </button>
-            </form>
+              Sign Out
+            </button>
           </div>
         </div>
       ) : (

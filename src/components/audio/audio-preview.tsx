@@ -8,7 +8,7 @@ import { MarkdownRenderer } from '@/components/ui/markdown-renderer'
 
 interface AudioPreviewProps {
   recording: AudioRecording
-  onSave: () => void
+  onSave: (title: string, description: string) => void
   onDiscard: () => void
   onDownload: () => void
   loading?: boolean
@@ -24,6 +24,8 @@ export function AudioPreview({ recording, onSave, onDiscard, onDownload, loading
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null)
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [transcriptionStep, setTranscriptionStep] = useState<'idle' | 'raw' | 'summary' | 'complete'>('idle')
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
   const audioRef = useRef<HTMLAudioElement>(null)
 
   useEffect(() => {
@@ -287,6 +289,39 @@ export function AudioPreview({ recording, onSave, onDiscard, onDownload, loading
         )}
       </div>
 
+      {/* Recording Details Form */}
+      <div className="mt-6 pt-6 border-t border-gray-700">
+        <h4 className="text-lg font-medium text-white mb-4">Recording Details</h4>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Title <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a title for this recording"
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loading}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Description <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe what this recording is about"
+              rows={3}
+              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              disabled={loading}
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-3 mt-6">
         <button
@@ -308,12 +343,25 @@ export function AudioPreview({ recording, onSave, onDiscard, onDownload, loading
         </button>
 
         <button
-          onClick={onSave}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
-          disabled={loading}
+          onClick={() => onSave(title, description)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+            title.trim() && description.trim() && !loading
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+          }`}
+          disabled={loading || !title.trim() || !description.trim()}
         >
-          <Save className="w-4 h-4" />
-          {loading ? 'Saving...' : 'Save to Database'}
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Generating Transcripts...
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              Save to Database
+            </>
+          )}
         </button>
       </div>
 

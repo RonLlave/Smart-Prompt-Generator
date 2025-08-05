@@ -1,9 +1,10 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Play, MoreVertical, Download, Trash2, Clock, FileAudio, Mic, Monitor, FileText } from 'lucide-react'
+import { Play, MoreVertical, Download, Trash2, Clock, FileAudio, Mic, Monitor, FileText, Eye } from 'lucide-react'
 import { AudioRecordingDB, formatDuration, formatFileSize } from '@/lib/supabase/audio-recordings'
 import { TranscriptionModal } from './transcription-modal'
+import { RecordingDetailsModal } from './recording-details-modal'
 
 interface AudioRecordingCardProps {
   recording: AudioRecordingDB
@@ -15,6 +16,7 @@ interface AudioRecordingCardProps {
 export function AudioRecordingCard({ recording, onPlay, onDelete, onDownload }: AudioRecordingCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showTranscriptionModal, setShowTranscriptionModal] = useState(false)
+  const [showDetailsModal, setShowDetailsModal] = useState(false)
 
   const getRecordingIcon = () => {
     const metadata = recording.metadata as any
@@ -66,11 +68,19 @@ export function AudioRecordingCard({ recording, onPlay, onDelete, onDownload }: 
           <div className="p-2 bg-gray-700 rounded-lg">
             {getRecordingIcon()}
           </div>
-          <div>
-            <h3 className="font-medium text-white text-sm">
-              Recording {new Date(recording.created_at).toLocaleTimeString()}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-white text-sm truncate">
+              {recording.title || `Recording ${new Date(recording.created_at).toLocaleTimeString()}`}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
+            {recording.description && (
+              <p className="text-xs text-gray-400 mt-1 leading-tight">
+                {recording.description.length > 100 
+                  ? `${recording.description.substring(0, 100)}...` 
+                  : recording.description
+                }
+              </p>
+            )}
+            <div className="flex items-center gap-2 mt-2">
               <span className={`text-xs px-2 py-1 rounded-full border ${getRecordingTypeColor()}`}>
                 {getRecordingType()}
               </span>
@@ -97,6 +107,16 @@ export function AudioRecordingCard({ recording, onPlay, onDelete, onDownload }: 
                 onClick={() => setShowMenu(false)}
               />
               <div className="absolute right-0 top-8 z-20 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 min-w-[160px]">
+                <button
+                  onClick={() => {
+                    setShowDetailsModal(true)
+                    setShowMenu(false)
+                  }}
+                  className="w-full px-3 py-2 text-left text-sm text-gray-300 hover:bg-gray-700 hover:text-white flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  View Details
+                </button>
                 <button
                   onClick={() => {
                     setShowTranscriptionModal(true)
@@ -177,6 +197,15 @@ export function AudioRecordingCard({ recording, onPlay, onDelete, onDownload }: 
           recording={recording}
           isOpen={showTranscriptionModal}
           onClose={() => setShowTranscriptionModal(false)}
+        />
+      )}
+
+      {/* Recording Details Modal */}
+      {showDetailsModal && (
+        <RecordingDetailsModal
+          recording={recording}
+          isOpen={showDetailsModal}
+          onClose={() => setShowDetailsModal(false)}
         />
       )}
     </div>

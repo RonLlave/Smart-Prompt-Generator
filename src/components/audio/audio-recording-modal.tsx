@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { X, Play, Pause, Volume2, Download, Trash2, Clock, FileAudio } from 'lucide-react'
 import { AudioRecordingDB, formatDuration, formatFileSize, getAudioRecordingUrl } from '@/lib/supabase/audio-recordings'
+import { Slider } from '@/components/ui/slider'
 
 interface AudioRecordingModalProps {
   recording: AudioRecordingDB
@@ -27,7 +28,7 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
       setLoading(true)
       setError(null)
       
-      getAudioRecordingUrl(recording.file_path)
+      getAudioRecordingUrl(recording)
         .then(url => {
           setAudioUrl(url)
           setLoading(false)
@@ -46,7 +47,12 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
     if (!audio) return
 
     const updateTime = () => setCurrentTime(audio.currentTime)
-    const updateDuration = () => setDuration(audio.duration)
+    const updateDuration = () => {
+      // Only set duration if it's a valid number
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration) && audio.duration > 0) {
+        setDuration(audio.duration)
+      }
+    }
     const handleEnded = () => setIsPlaying(false)
     const handleError = () => {
       setError('Failed to load audio file')
@@ -55,12 +61,16 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
 
     audio.addEventListener('timeupdate', updateTime)
     audio.addEventListener('loadedmetadata', updateDuration)
+    audio.addEventListener('loadeddata', updateDuration)
+    audio.addEventListener('canplaythrough', updateDuration)
     audio.addEventListener('ended', handleEnded)
     audio.addEventListener('error', handleError)
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime)
       audio.removeEventListener('loadedmetadata', updateDuration)
+      audio.removeEventListener('loadeddata', updateDuration)
+      audio.removeEventListener('canplaythrough', updateDuration)
       audio.removeEventListener('ended', handleEnded)
       audio.removeEventListener('error', handleError)
     }
@@ -79,11 +89,11 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
     }
   }
 
-  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSeek = (value: number[]) => {
     const audio = audioRef.current
     if (!audio) return
 
-    const newTime = parseFloat(e.target.value)
+    const newTime = value[0]
     audio.currentTime = newTime
     setCurrentTime(newTime)
   }
@@ -92,7 +102,10 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
     if (audioUrl) {
       const link = document.createElement('a')
       link.href = audioUrl
-      link.download = `recording_${new Date(recording.created_at).getTime()}.${recording.mime_type.split('/')[1]}`
+      // Get file extension from metadata mimeType instead of non-existent mime_type
+      const mimeType = recording.metadata?.mimeType as string
+      const extension = mimeType ? mimeType.split('/')[1] : 'webm'
+      link.download = `recording_${new Date(recording.created_at).getTime()}.${extension}`
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
@@ -104,6 +117,23 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
       onDelete(recording.id)
       onClose()
     }
+  }
+
+  // Get the actual duration - fallback to metadata if audio element duration isn't available
+  const getActualDuration = () => {
+    // First try HTML audio element duration
+    if (duration && !isNaN(duration) && isFinite(duration) && duration > 0) {
+      return duration
+    }
+    
+    // Fallback to metadata duration
+    const metadataDuration = recording.metadata?.duration as number
+    if (metadataDuration && !isNaN(metadataDuration) && isFinite(metadataDuration) && metadataDuration > 0) {
+      return metadataDuration
+    }
+    
+    // Final fallback
+    return 0
   }
 
   const getRecordingType = () => {
@@ -127,9 +157,16 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
             <div className="p-2 bg-blue-600 rounded-lg">
               <FileAudio className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Audio Recording</h3>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-semibold text-white truncate">
+                {recording.title || 'Audio Recording'}
+              </h3>
               <p className="text-sm text-gray-400">{getRecordingType()}</p>
+              {recording.description && (
+                <p className="text-sm text-gray-500 mt-1 truncate">
+                  {recording.description}
+                </p>
+              )}
             </div>
           </div>
           <button
@@ -147,15 +184,30 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-400">Duration:</span>
-                <span className="text-white">{formatDuration(recording.duration_seconds)}</span>
+                <span className="text-white">
+                  {recording.metadata?.duration 
+                    ? formatDuration(recording.metadata.duration as number)
+                    : 'Unknown'
+                  }
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">File Size:</span>
-                <span className="text-white">{formatFileSize(recording.file_size)}</span>
+                <span className="text-white">
+                  {recording.metadata?.fileSize 
+                    ? formatFileSize(recording.metadata.fileSize as number)
+                    : 'Unknown'
+                  }
+                </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-400">Format:</span>
-                <span className="text-white">{recording.mime_type}</span>
+                <span className="text-white">
+                  {recording.metadata?.mimeType 
+                    ? (recording.metadata.mimeType as string).split('/')[1].toUpperCase()
+                    : 'Unknown'
+                  }
+                </span>
               </div>
             </div>
             <div className="space-y-2">
@@ -205,24 +257,17 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
 
                 {/* Progress Bar */}
                 <div className="space-y-2">
-                  <input
-                    type="range"
-                    min="0"
-                    max={duration || 0}
-                    value={currentTime}
-                    onChange={handleSeek}
-                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
-                        duration > 0 ? (currentTime / duration) * 100 : 0
-                      }%, #374151 ${
-                        duration > 0 ? (currentTime / duration) * 100 : 0
-                      }%, #374151 100%)`
-                    }}
+                  <Slider
+                    value={[currentTime]}
+                    onValueChange={handleSeek}
+                    max={getActualDuration()}
+                    min={0}
+                    step={0.1}
+                    className="w-full"
                   />
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>{formatDuration(currentTime)}</span>
-                    <span>{formatDuration(duration)}</span>
+                    <span>{formatDuration(currentTime || 0)}</span>
+                    <span>{formatDuration(getActualDuration())}</span>
                   </div>
                 </div>
               </div>
@@ -232,8 +277,20 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
           {/* Transcription */}
           {recording.transcription && (
             <div className="bg-gray-800 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">Transcription</h4>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">Raw Transcript</h4>
               <p className="text-gray-400 text-sm leading-relaxed">{recording.transcription}</p>
+            </div>
+          )}
+
+          {/* AI Summary */}
+          {recording.ai_summary_text && (
+            <div className="bg-gray-800 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-300 mb-2">AI Summary</h4>
+              <div className="text-gray-400 text-sm leading-relaxed prose prose-sm prose-invert max-w-none">
+                {recording.ai_summary_text.split('\n').map((line, index) => (
+                  <p key={index} className="mb-2 last:mb-0">{line}</p>
+                ))}
+              </div>
             </div>
           )}
         </div>
@@ -263,27 +320,6 @@ export function AudioRecordingModal({ recording, isOpen, onClose, onDelete }: Au
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .slider::-webkit-slider-thumb {
-          appearance: none;
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: 2px solid #1f2937;
-        }
-        
-        .slider::-moz-range-thumb {
-          height: 16px;
-          width: 16px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          border: 2px solid #1f2937;
-        }
-      `}</style>
     </div>
   )
 }

@@ -1,6 +1,18 @@
-import { signIn } from "@/lib/auth"
+"use client"
+
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function SignInPage() {
+  const { user, signInWithGoogle } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (user) {
+      router.push('/dashboard')
+    }
+  }, [user, router])
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-md space-y-8">
@@ -12,16 +24,10 @@ export default function SignInPage() {
             Use your Google account to continue
           </p>
         </div>
-        <form
-          action={async () => {
-            "use server"
-            await signIn("google", { redirectTo: "/" })
-          }}
+        <button
+          onClick={signInWithGoogle}
+          className="w-full flex justify-center items-center gap-3 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
-          <button
-            type="submit"
-            className="w-full flex justify-center items-center gap-3 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-          >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
                 fill="currentColor"
@@ -41,8 +47,7 @@ export default function SignInPage() {
               />
             </svg>
             Continue with Google
-          </button>
-        </form>
+        </button>
       </div>
     </div>
   )

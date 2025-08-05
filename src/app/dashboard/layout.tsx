@@ -1,14 +1,28 @@
-import { auth } from "@/lib/auth"
-import Link from "next/link"
+"use client"
 
-export default async function DashboardLayout({
+import Link from "next/link"
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+import { UserProfileDropdown } from '@/components/ui/user-profile-dropdown'
+
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const session = await auth()
+  const { user, loading } = useAuth()
 
-  if (!session?.user) {
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+          <p className="text-white mt-4">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
@@ -52,21 +66,7 @@ export default async function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center">
-              <span className="text-sm text-gray-400 mr-4">{session.user.email}</span>
-              <form
-                action={async () => {
-                  "use server"
-                  const { signOut } = await import("@/lib/auth")
-                  await signOut()
-                }}
-              >
-                <button
-                  type="submit"
-                  className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-gray-700"
-                >
-                  Sign out
-                </button>
-              </form>
+              <UserProfileDropdown />
             </div>
           </div>
         </div>

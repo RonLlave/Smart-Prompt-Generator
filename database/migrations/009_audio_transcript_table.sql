@@ -6,6 +6,10 @@ CREATE TABLE IF NOT EXISTS audio_transcript (
     audio_filename TEXT NOT NULL,
     complete_file_link TEXT NOT NULL,
     added_by_email TEXT NOT NULL,
+    title TEXT,
+    description TEXT,
+    raw_transcript JSONB,
+    ai_summary JSONB,
     metadata JSONB DEFAULT '{}',
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -21,5 +25,9 @@ COMMENT ON COLUMN audio_transcript.id IS 'Unique identifier for the transcript';
 COMMENT ON COLUMN audio_transcript.audio_filename IS 'Name of the audio file';
 COMMENT ON COLUMN audio_transcript.complete_file_link IS 'Full URL or path to the audio file';
 COMMENT ON COLUMN audio_transcript.added_by_email IS 'Email of the user who added the transcript';
+COMMENT ON COLUMN audio_transcript.title IS 'Title or name for the audio transcript';
+COMMENT ON COLUMN audio_transcript.description IS 'Description or summary of the audio transcript';
+COMMENT ON COLUMN audio_transcript.raw_transcript IS 'Raw transcript data in JSON format';
+COMMENT ON COLUMN audio_transcript.ai_summary IS 'AI-generated summary in JSON format';
 COMMENT ON COLUMN audio_transcript.metadata IS 'Additional metadata in JSON format';
 COMMENT ON COLUMN audio_transcript.created_at IS 'Timestamp when the transcript was created';

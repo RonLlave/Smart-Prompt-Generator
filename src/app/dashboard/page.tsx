@@ -1,13 +1,15 @@
-import { auth } from "@/lib/auth"
-import Link from "next/link"
+"use client"
 
-export default async function DashboardPage() {
-  const session = await auth()
+import Link from "next/link"
+import { useAuth } from '@/components/providers/supabase-auth-provider'
+
+export default function DashboardPage() {
+  const { user } = useAuth()
 
   return (
     <div className="min-h-screen bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8 text-white">Welcome back, {session?.user?.name || 'User'}!</h1>
+        <h1 className="text-3xl font-bold mb-8 text-white">Welcome back, {user?.user_metadata?.name || user?.email || 'User'}!</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Link href="/dashboard/builder" className="block">

@@ -24,7 +24,8 @@
       "Bash(cd:*)",
       "Bash(mv:*)",
       "Bash(ls:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx supabase db reset:*)"
     ],
     "deny": []
   }

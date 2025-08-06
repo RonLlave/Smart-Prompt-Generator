@@ -63,6 +63,9 @@ export default function DashboardLayout({
                 <Link href="/dashboard/summary" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
                   AI Summary
                 </Link>
+                <Link href="/dashboard/calendar" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                  Calendar
+                </Link>
               </div>
             </div>
             <div className="flex items-center">

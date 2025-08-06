@@ -16,6 +16,12 @@ A comprehensive visual prompt builder with AI-powered assistant generation, desk
 - Contextual prompt creation using Gemini Pro 2.5
 - Copy-paste ready prompts with regeneration capabilities
 
+### 🗓️ **Google Calendar Integration**
+- View upcoming and past meeting events
+- Seamless Google OAuth through Supabase authentication
+- Meeting details with direct join links
+- Integrated calendar tab in dashboard
+
 ### 🎙️ **Advanced Audio Recording**
 - Desktop audio capture (like Loom, audio-only)
 - Real-time transcription with Google Gemini Pro 1.5
@@ -32,6 +38,7 @@ A comprehensive visual prompt builder with AI-powered assistant generation, desk
 - Component library with search and filtering
 - Audio transcript storage with AI processing
 - Version-controlled assistant prompt generation
+- Google Calendar events integration and display
 
 ## 🛠 Tech Stack
 
@@ -53,6 +60,7 @@ A comprehensive visual prompt builder with AI-powered assistant generation, desk
 - **AI Models**: Google Gemini Pro 1.5 & Pro 2.5
 - **Audio Processing**: Real-time transcription and summarization
 - **Prompt Generation**: Contextual AI assistant creation
+- **Calendar Integration**: Google Calendar API with OAuth tokens
 
 ## Getting Started
 
@@ -158,6 +166,7 @@ For detailed setup, see `/database/README.md`.
 - **🔐 Authentication**: ✅ Complete (Native Supabase Auth)
 - **🎙️ Audio Recording**: ✅ Complete (Desktop capture + AI transcription)
 - **🤖 AI Integration**: ✅ Complete (Gemini Pro transcription + prompt generation)
+- **🗓️ Calendar Integration**: ✅ Complete (Google Calendar with OAuth)
 - **🎨 Component Library**: ✅ Ready (50+ components, seed data prepared)
 - **📱 Visual Builder**: 🚧 In Progress (Drag-and-drop canvas next)
 
@@ -167,6 +176,7 @@ For detailed setup, see `/database/README.md`.
 - [x] Authentication system
 - [x] Audio recording and transcription
 - [x] AI-powered assistant prompt generation
+- [x] Google Calendar integration
 - [x] Database schema and security
 
 ### Phase 2: Visual Builder 🚧

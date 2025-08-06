@@ -45,6 +45,7 @@ export function useSupabaseAuth() {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
+        scopes: 'openid profile email https://www.googleapis.com/auth/calendar.readonly'
       },
     })
     
